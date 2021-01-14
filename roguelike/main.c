@@ -12,8 +12,17 @@ typedef struct {
 typedef struct {
 	int x;
 	int y;
-	int memo;		// 前回いたマス目
+	int memo;			// 前回いたマス目
 } Chara;
+
+typedef struct {
+	int hp;
+	int attack;
+	int defence;
+	int exp;
+	unsigned int money;	// (0 ～ 4,294,967,295)
+	
+} Ability;
 
 // split と共通(ヘッダーファイル等)
 //#define H 		30
@@ -144,7 +153,7 @@ void export(char file_name[], int *field){
  ゲームの準備
  プレイヤーの初期位置を確定
 */
-void init_game(Chara *player, int *field){
+void init_game(Chara *player, int *field,){
 
 	int player_h, player_w;		// 仮初期位置
 
@@ -172,6 +181,21 @@ void init_game(Chara *player, int *field){
 
 	return;
 }
+
+/*
+ playerのbilityを準備
+*/
+
+void init_player_ability(Ability *plyr_ability){
+
+	plyr_ability.hp      = 100;
+	plyr_ability.attack  = 15;
+	plyr_ability.defence = 5;
+	plyr_ability.exp 	 = 0;
+	plyr_ability.money   = 0;
+
+}
+
 
 
 // 色0 : 黒地に黒文字
@@ -221,6 +245,11 @@ void draw_dungeon(int *field, int h, int w){
 
     return ;
 }
+
+void draw_info(void){
+
+}
+
 
 void output(int *field, int h, int w){
 
@@ -337,8 +366,15 @@ void Game(Coord *disp, int mode){
 
 	int field[H][W] = {};		// 0:空白, 1:壁, 2:床, 3:廊下, 4:プレイヤー
 	int key;
+	int 
 
-	Chara player;		// プレイヤーの座標
+	Chara 　player;				// プレイヤーの座標
+
+	Ability plyr_ability;		// プレイヤーの能力
+
+	// 構造体の中身を全て0に設定
+	memset(player, 0, sizeof(player));
+	memset(plyr_ability , 0, sizeof(plyr_ability));
 
     // フィールドをロード
 	if(mode == 0){			// ニューゲーム
@@ -347,14 +383,20 @@ void Game(Coord *disp, int mode){
 		system("./make");
 		export("../field/map.txt", (int *)field);
 
+		// 初期設定
+		init_game(&player, (int *)field);
+
+
 	} else if(mode == 1){	// ロード
 
 		// セーブデータをロード
 		export("../save/save_data.txt", (int *)field);
+
+		// 初期設定
+		init_game(&player, (int *)field);
+
 	} 
 
-	// 初期設定
-	init_game(&player, (int *)field);
 
 	// メインループ
 	while (1){
