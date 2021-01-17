@@ -3,7 +3,92 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include "dungeon.h"
+
+// マクロ宣言
+#define H			34		// fieldの高さ
+#define W			74		// fieldの幅
+
+#define AREA_MAX 	8		// 分割回数の最大値
+
+#define A 			5		// 分割パラメータ A
+#define B 			3		// 分割パラメータ B
+
+#define MIN_WIDTH	4		// 部屋の最小幅
+#define MAX_WIDTH	15		// 部屋の最大幅
+
+
+// 構造体
+typedef struct {
+	int y;
+	int x;
+} Coord;
+
+typedef struct {
+	Coord start;
+	Coord end;
+} Mark;
+
+typedef struct {
+	Coord start;
+	Coord end;
+	int dire;		// 0:上, 3:右, 6:下, 9:左
+	int flag;
+} Road;
+
+
+// プロトタイプ宣言
+
+// エリアの分割
+void init_split(Mark *area);								// 分割の初期処理
+int  sizeY(Mark *elem);										// 縦幅を取得
+int  sizeX(Mark *elem);										// 横幅を取得
+int  max_area(Mark *area, int split_count);					// 最大の面積を持つエリアの番号
+int  split_adj(int split, Mark *area, int line, int m);		// 分割位置の調整
+void split_area(Mark *area, int line, int m, int n);		// エリアを分割
+
+//部屋を作成
+void make_room(Mark *area, Mark *room, int room_num);		// 部屋を作成
+void store_room(int *field, Mark *room, int room_num);		// ルームをfieldに格納
+void frame(int *field, Mark *room, int room_num);			// ルームを枠で囲む
+
+// 通路を作成
+int  extend_aisle(Mark *area, Road *aisle, Mark *room, int room_num);	// 通路を伸ばす
+int  square(int x);														// 自乗計算
+int  nearest(Road *aisle, int candidate[], int asl_count, int dire, int index);  //一番近い通路
+int  search_aisle(Road *aisle, int asl_num, int dire, int coord, int index, int conect_num);  // 繋げる通路を探す
+int  connect_aisle(Road *aisle, int asl_num);				// 通路同士を繋げる
+int  greater(int a, int b);									// aとbを比べて大きい方を返す
+int  less(int a, int b);									// aとbを比べて小さい方を返す
+void store_aisle(int *field, Road *aisle, int asl_num);		// 通路をfieldに格納
+
+
+void make_dungeon(int *field);								// ダンジョンの自動生成
+void writing_field(char file_name[], int *field);			// fieldをテキストファイルに格納
+
+// デバック
+#ifdef DEB
+void draw(int *field);
+void print_structure(Mark *structure, int count, char name[10]);
+void print_structure_road(Road *structure, int asl_num, char name[10]);
+void store_area(int *field, Mark *area, int split_num);
+#endif
+
+
+int main(void){
+
+	int  field[H][W] = {};	// ダンジョンの情報を格納
+
+	// 乱数のシード地を設定
+	srand((unsigned int) time(NULL));
+
+	// ダンジョンの自動生成
+	make_dungeon((int *) field);
+
+	// ダンジョンの情報をテキストファイルに書き込む
+	writing_field("../field/map.txt", (int *)field);
+
+	return 0;
+}
 
 
 /*
@@ -59,6 +144,11 @@ int max_area(Mark *area, int split_count){
 		}
 	}
 
+	// デバック
+	#ifdef DEBIN
+		printf("maxArea : %d, index : %d \n", max, num);
+	#endif
+
 	return num;
 }
 
@@ -107,6 +197,10 @@ void split_area(Mark *area, int line, int m, int n){
 
 	int X, Y;		// 分割する座標
 	int split;		// 分割の仮座標
+
+	#ifdef DEBIN
+		printf("m:%d, n:%d \n", m, n);
+	#endif
 
 	if(line == 0){			// 縦方向に分割
 		// 分割位置を確定
@@ -266,6 +360,17 @@ int extend_aisle(Mark *area, Road *aisle, Mark *room, int room_num){
 		if(area[n].end.y   != H-1) dire[2] = 1;		// 下にareaがある
 		if(area[n].end.x   != W-1) dire[3] = 1;		// 右にareaがある
 
+
+		// デバック
+		#ifdef DEBIN
+			printf("n: %d    ", n);
+			printf("dire[4] = {");
+			for(int i = 0; i < 4; i++){
+				printf("%d, ", dire[i]);
+			}
+			printf("}\n");
+		#endif
+
 		// フラグの結果から
 		if(dire[0] == 1){	// 上方向に通路をのばす
 			door = rand()%sizeX(&room[n]) + room[n].start.x;
@@ -318,6 +423,11 @@ int extend_aisle(Mark *area, Road *aisle, Mark *room, int room_num){
 		}
 
 	}
+
+	// デバック
+	#ifdef DEBIN
+		print_structure_road(aisle, aisle_num, "aisle");
+	#endif
 
 	return aisle_num;
 }
@@ -393,12 +503,21 @@ int search_aisle(Road *aisle, int asl_num, int dire, int coord, int index, int c
 		}
 	}
 	
+
+//	printf("s1 ");
+
 	// 候補から繋げる通路を探す
 	min_distance = nearest(aisle, candidate, asl_count, dire, index);
+
+//	printf("s2 ");
 
 	// 繋げた通路のフラグを立てる
 	aisle[index].flag = 1;
 	aisle[min_distance].flag = 1;
+
+//	printf("s3 ");
+
+//	printf("s4 ");
 
 	if(dire == 0 || dire == 6){
 
@@ -425,6 +544,8 @@ int search_aisle(Road *aisle, int asl_num, int dire, int coord, int index, int c
 	//　通路を繋げる
 	conect_num ++;		// 通路数を1増やし, そこに繋げた通路を保存する
 
+//	printf("s5 ");
+	
 	return conect_num;
 }
 
@@ -459,6 +580,8 @@ int connect_aisle(Road *aisle, int asl_num){
 
 
 	}
+
+	printf("conect_num : %d, asl_num : %d\n", conect_num, asl_num);
 	
 	return asl_num + conect_num;
 }
@@ -496,6 +619,11 @@ void store_aisle(int *field, Road *aisle, int aisle_num){
 
 	for(int n = 0; n < aisle_num; n++){
 
+		// デバック
+		#ifdef DEBIN
+			printf("store_aisle n : %d\n", n);
+		#endif
+
 		for(int i = less(aisle[n].start.y, aisle[n].end.y); i <= greater(aisle[n].start.y, aisle[n].end.y); i++){
 			for(int j = less(aisle[n].start.x, aisle[n].end.x); j <= greater(aisle[n].start.x, aisle[n].end.x); j++){
 				field[i * W + j] = 3;
@@ -508,9 +636,9 @@ void store_aisle(int *field, Road *aisle, int aisle_num){
 
 
 /*
- ダンジョンの生成
+ ダンジョンの自動生成
 */
-void dungeon(int *field){
+void make_dungeon(int *field){
 
 	Mark area [AREA_MAX];		// エリア
 	Mark room [AREA_MAX];		// ルーム
@@ -563,6 +691,10 @@ void dungeon(int *field){
 	// 通路を繋げる
 	aisle_num = connect_aisle(aisle, aisle_num);
 
+	printf("aisle_num : %d\n", aisle_num);
+
+	print_structure_road(aisle, aisle_num+3, "aisle");
+
 	// 通路を格納
 	store_aisle((int *)field, aisle, aisle_num);
 
@@ -577,6 +709,7 @@ void dungeon(int *field){
 void writing_field(char file_name[], int *field){
 
 	FILE *fp;
+	int index = 0;		// fieldのインデックス
 
 	fp = fopen(file_name, "w");
 	if(fp == NULL){
@@ -597,21 +730,55 @@ void writing_field(char file_name[], int *field){
 }
 
 
-/*
- ダンジョンの自動生成
-*/
-void make_dungeon(void){
 
-	int  field[H][W] = {};	// ダンジョンの情報を格納
 
-	// 乱数のシード地を設定
-	srand((unsigned int) time(NULL));
+// デバック
+#ifdef DEB
+void draw(int *field){
 
-	// ダンジョンの自動生成
-	dungeon((int *) field);
+	puts("");
 
-	// ダンジョンの情報をテキストファイルに書き込む
-	writing_field("../field/map.txt", (int *)field);
-
+	for(int y = 0; y < H; y++){
+		for(int x = 0; x < W; x++){
+			printf("%d", field[y*W+x]);
+		}
+		puts("");
+	}
 	return;
 }
+
+void print_structure(Mark *structure, int count, char name[10]){
+
+	printf("%s = {\n", name);
+	for(int n = 0; n < count; n++){
+		printf("{{%2d, %2d}, {%2d, %2d}},\n", structure[n].start.y, structure[n].start.x, structure[n].end.y, structure[n].end.x);
+	}
+	printf("}\n");
+
+	return ;
+}
+
+void print_structure_road(Road *structure, int aisle_num, char name[10]){
+
+	printf("%s = {\n", name);
+	for(int n = 0; n < aisle_num; n++){
+		printf("{{%2d, %2d}, {%2d, %2d}, %d, %d}\n", structure[n].start.y, structure[n].start.x, structure[n].end.y, structure[n].end.x, structure[n].dire, structure[n].flag);
+	}
+	printf("}\n");
+
+	return ;
+}
+
+
+void store_area(int *field, Mark *area, int split_num){
+	for(int n = 0; n < split_num; n++){
+		for(int i = area[n].start.y; i <= area[n].end.y; i++){
+			for(int j = area[n].start.x; j <= area[n].end.x; j++){
+				field[i * W + j] = n;
+			}
+		}
+	}
+
+	return ;
+}
+#endif
