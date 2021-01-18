@@ -3,7 +3,7 @@ CFLAGS = -Wall
 
 all:	rogue
 
-rogue:	make_dungeon.o main.o enemy.o
+rogue:	make_dungeon.o main.o enemy2.o
 	cc $^ -lncurses -o $@
 
 make_dungeon.o:	 ../roguelike/make_dungeon.c ../roguelike/dungeon.h ../roguelike/basic.h
@@ -12,8 +12,11 @@ make_dungeon.o:	 ../roguelike/make_dungeon.c ../roguelike/dungeon.h ../roguelike
 main.o:	../roguelike/main.c ../roguelike/dungeon.h ../roguelike/basic.h
 	cc -c ../roguelike/main.c -Wall
 
-enemy.o: ../roguelike/enemy.c ../roguelike/enemy.h ../roguelike/basic.h
-	cc -c ../roguelike/enemy.c -Wall
+#enemy.o: ../roguelike/enemy.c ../roguelike/enemy.h ../roguelike/basic.h
+	#cc -c ../roguelike/enemy.c -Wall
+
+enemy2.o: ../roguelike/enemy2.c ../roguelike/enemy.h ../roguelike/basic.h
+	cc -c ../roguelike/enemy2.c -Wall
 
 clean:
 		-rm rogue *.o
