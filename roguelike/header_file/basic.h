@@ -2,6 +2,19 @@
 #define BASIC_H
 
 // main.c, make_dungeon.c
+#define H			34		// fieldの高さ
+#define W			74		// fieldの幅
+
+// main.c テスト用
+//#define H 		30
+//#define W 		30
+
+#define	BUFLEN	256
+
+#define MAX_ITEMS   2       // アイテムの数
+
+
+// main.c, make_dungeon.c
 // 座標に関する構造体
 typedef struct {
 	int y;
@@ -53,14 +66,22 @@ typedef struct {
 typedef struct {
 	int  type;
 	int  model_num;
-	char sentence;
-} Message;
-
-
-// main.c, make_dungeon.c
-#define H			34		// fieldの高さ
-#define W			74		// fieldの幅
+	char sentence[BUFLEN];
+} Category;
 
 
 
+/*
+ Category = {type, model_num, sentence};
+      type : アイテムの種類	1:武器, 2:防具, 3:回復・強化アイテム
+ model_num : そのアイテムの種類内での型番号
+  sentence : そのアイテムに関する説明
+*/
+
+/*
+Category item[MAX_ITEMS] = {
+	{3, 1, "薬草"},
+	{3, 2, "回復薬"}
+};
+*/
 #endif

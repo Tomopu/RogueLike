@@ -4,6 +4,7 @@
 #include "basic.h"
 
 #define ENEMY_NUM 3
+#define SEARCH_RANGE 13		// サーチ範囲の範囲(幅)
 
 #define ENEMY_UP	field[(enemy->y-1)* W + enemy->x]
 #define ENEMY_RIGHT	field[enemy->y*W +  (enemy->x+1)]

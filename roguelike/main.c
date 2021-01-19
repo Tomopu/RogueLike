@@ -5,63 +5,7 @@
 #include <stdio.h>
 #include <unistd.h>		// usleep()
 
-#include "dungeon.h"
-#include "enemy.h"
-
-// split と共通(ヘッダーファイル等)
-//#define H 		30
-//#define W 		30
-
-#define UP		field[(player->y-1)* W + player->x]
-#define RIGHT	field[player->y*W +  (player->x+1)]
-#define DOWN	field[(player->y+1)* W + player->x]
-#define LEFT	field[player->y*W +  (player->x-1)]
-
-#define TOP			position.start.y
-#define RIGHTMOST	position.start.x
-#define BOTTOM		position.end.y
-#define LEFTMOST	position.end.x
-
-#define PTOP		position->start.y
-#define PRIGHTMOST	position->start.x
-#define PBOTTOM		position->end.y
-#define PLEFTMOST	position->end.x
-
-#define PLAYER_MAX_HP		player->status.max_hp
-#define PLAYER_HP 			player->status.hp
-#define PLAYER_ATTACK 		player->status.attack
-#define PLAYER_DEFENCE 		player->status.defence
-#define PLAYER_EXP 			player->status.exp
-#define PLAYER_BORDER_EXP 	player->status.border_exp
-#define PLAYER_LEVEL 		player->status.level
-#define PLAYER_MONEY 		player->status.money
-
-
-
-// プロトタイプ宣言
-void export(char file_name[], int *field);			// field 情報を書き出し
-void init_game(Chara *player, Chara *enemy, int *field);			// プレイヤーの初期位置を確定
-void init_player_status(Chara *player);				// プレイヤーステータスの初期化
-void draw_flame(Mark *position);
-void draw_status(Mark *position, Chara *player);
-void draw_log(Mark *position);
-void draw_inventry(Mark *position);
-void draw_equipment(Mark *position);
-void draw_info(Mark *position, int *info_num, int color_flag);
-void draw_enemy(Chara *enemy, int h, int w, int y, int x);
-void draw_dungeon(int *field, Chara *enemy, int h, int w);		// mapの描画
-void info(Mark *position, int *info_num);
-void output(int *field, int h, int w);				// 画面へ出力
-void ctrl(int *field, int key, Chara *player, Chara *enemy, Mark *position, int *info_num);		// 入力
-void walk(int *field, Chara *player, Chara *enemy, int dire);		// 歩けるか確認
-
-
-
-int  Title(Coord *disp);				// タイトル画面を表示
-void Game(Coord *disp, int mode);		// ゲーム本体
-void Instr(void);						// 説明書を表示
-
-
+#include "header_file/rogue.h"
 
 
 int main(void){
@@ -122,7 +66,7 @@ int main(void){
 /*
  テキストファイルから, fieldに格納
 */
-void export(char file_name[], int *field){
+void export_field(char file_name[], int *field){
 
 	FILE *fp;
 	int x;				// ファイルからの入力
@@ -255,240 +199,6 @@ void init_player_status(Chara *player){
 }
 
 
-void draw_flame(Mark *position){
-
-	mvaddstr(PTOP   , PLEFTMOST  , "1");
-	mvaddstr(PTOP   , PRIGHTMOST , "2");
-	mvaddstr(PBOTTOM, PLEFTMOST  , "3");
-	mvaddstr(PBOTTOM, PRIGHTMOST , "4");
-
-	return;
-}
-
-void draw_status(Mark *position, Chara *player){
-
-	int hp_bar;
-
-	attrset(COLOR_PAIR(1));  // 黒地に緑文字
-
-	mvprintw(PTOP  , PLEFTMOST, "╔══════/ STATUS /═════════════════════════════════════════════════════════════════════╗");
-	for(int i = 1; i < 5; i++){
-		mvaddstr(PTOP+i, PLEFTMOST	  ,"║");
-		mvaddstr(PTOP+i, PLEFTMOST+86, "║");
-	}
-	mvprintw(PTOP+5, PLEFTMOST, "╚═════════════════════════════════════════════════════════════════════/ STATUS /══════╝");
-
-	mvaddstr(PTOP+2, PLEFTMOST+3 , " HP: ");
-	mvprintw(PTOP+2, PLEFTMOST+70, "地下%2d階", player->status.floor);
-	mvprintw(PTOP+3, PLEFTMOST+3 , "ATK: %-3d  DEF: %-3d  EXP: %-4d(/%-4d)  LV: %-4d GOLD: %2u", PLAYER_ATTACK, PLAYER_DEFENCE, PLAYER_EXP, PLAYER_BORDER_EXP, PLAYER_LEVEL, PLAYER_MONEY);
-
-// 	PLAYER_HP = 67;
-
-	hp_bar = (int)(((double)PLAYER_HP/PLAYER_MAX_HP)*10);
-
-	attrset(COLOR_PAIR(4));  // 赤地に白文字
-	for(int i = 0; i < hp_bar*2; i++){
-		mvprintw(PTOP+2, PLEFTMOST+8+i, " ");
-	}
-
-	attrset(COLOR_PAIR(1));  // 黒地に緑文字
-	mvprintw(PTOP+2, PLEFTMOST+8+10*2, "(%4d/%4d)", PLAYER_HP, PLAYER_MAX_HP);
-
-	return;
-}
-
-
-void draw_log(Mark *position){
-
-	attrset(COLOR_PAIR(1));  // 黒地に緑文字
-
-	mvprintw(PBOTTOM-10, PLEFTMOST, "╔══════/ LOG /════════════════════════════════════════════════════════════════════════╗");
-	for(int i = 1; i < 10; i++){
-		mvaddstr(PBOTTOM-10+i, PLEFTMOST   , "║");
-		mvaddstr(PBOTTOM-10+i, PLEFTMOST+86, "║");
-	}
-	mvprintw(PBOTTOM   , PLEFTMOST, "╚════════════════════════════════════════════════════════════════════════/ LOG /══════╝");
-}
-
-void draw_inventry(Mark *position){
-
-	attrset(COLOR_PAIR(1));  // 黒地に緑文字
-
-	mvprintw(PTOP   , PRIGHTMOST-86, "╔══════/ INVENTRY /══════════════════════════════════════════════════════[%2d/%2d]══════╗", 3, 10);
-	for(int i = 1; i < 12; i++){
-		mvaddstr(PTOP+i, PRIGHTMOST-86, "║");
-		mvaddstr(PTOP+i, PRIGHTMOST   , "║");
-	}
-	mvprintw(PTOP+12, PRIGHTMOST-86, "╚══════[R-key]══════════════════════════════════════════════════════/ INVENTRY /══════╝");
-	return;
-}
-
-void draw_equipment(Mark *position){
-
-	attrset(COLOR_PAIR(1));  // 黒地に緑文字
-
-	mvprintw(PTOP+14, PRIGHTMOST-86, "╔══════/ EQUIPMWNT /═════════════════════════════════════════════════════[%2d/%2d]══════╗", 3, 10);
-	for(int i = 1; i < 15; i++){				 
-		mvaddstr(PTOP+14+i, PRIGHTMOST-86, "║");
-		mvaddstr(PTOP+14+i, PRIGHTMOST   , "║");
-	}
-	mvprintw(PTOP+29, PRIGHTMOST-86, "╚══════[E-key]═════════════════════════════════════════════════════/ EQUIPMWNT /══════╝");
-
-	mvprintw(PTOP+16, PRIGHTMOST-84, "────────────────────────────────────────────────────────");
-	mvprintw(PTOP+22, PRIGHTMOST-84, "────────────────────────────────────────────────────────");
-
-	attrset(COLOR_PAIR(3));	// 黒地に白文字
-	mvprintw(PTOP+16, PRIGHTMOST-78, "WEAPON");
-	mvprintw(PTOP+22, PRIGHTMOST-78, "ARMOR");
-
-	attrset(COLOR_PAIR(1));  // 黒地に緑文字
-
-	return;
-}
-
-
-/*
- INFO画面の初期化
-*/
-void erase_info(Mark *position){
-
-	attrset(COLOR_PAIR(1));  // 黒地に緑文字
-
-	for(int i = 0; i < 20; i++){
-		for(int j = 0; j < 85; j++){
-			mvaddstr(PBOTTOM-20+i, PRIGHTMOST-85+j, " ");
-		}
-	}
-
-	return;
-}
-
-/*
- INFO画面の表示
-*/
-void draw_info(Mark *position, int *info_num, int color_flag){
-
-	attrset(COLOR_PAIR(1));	 // 黒地に緑文字 強調
-
-	if(color_flag == 1) attrset(COLOR_PAIR(1) | A_BOLD);	// 黒地に緑文字
-
-	mvprintw(PBOTTOM-21, PRIGHTMOST-86, "╔══════/ INFO /═══════════════════════════════════════════════════════════════════════╗");
-	for(int i = 1; i < 21; i++){				  
-		mvaddstr(PBOTTOM-21+i, PRIGHTMOST-86, "║");
-		mvaddstr(PBOTTOM-21+i, PRIGHTMOST   , "║");
-	}
-	mvprintw(PBOTTOM   , PRIGHTMOST-86, "╚══════[I-key]══════════════════════════════════════════════════════════/ INFO /══════╝");
-
-//	mvprintw(PBOTTOM-21, PRIGHTMOST-70, "[ ]");
-
-	if(*info_num == 1){
-
-		erase_info(position);
-		mvprintw(PBOTTOM-16, PRIGHTMOST-84, " - [W]  前移動 Move forward");
-
-		attrset(COLOR_PAIR(2));  // 緑地に白文字
-		mvprintw(PBOTTOM-19, PRIGHTMOST-84, "[1] 操作方法");
-
-		attrset(COLOR_PAIR(1));  // 黒地に緑文字
-		mvprintw(PBOTTOM-19, PRIGHTMOST-70, "[2] マス種類");
-		mvprintw(PBOTTOM-19, PRIGHTMOST-56, "[3] 武器情報");
-		mvprintw(PBOTTOM-19, PRIGHTMOST-42, "[4] 防具情報");
-
-		mvprintw(PBOTTOM-18, PRIGHTMOST-84, "");
-		mvprintw(PBOTTOM-17, PRIGHTMOST-84, " - [W]  前移動");
-		mvprintw(PBOTTOM-16, PRIGHTMOST-84, " - [A]  左移動");
-		mvprintw(PBOTTOM-15, PRIGHTMOST-84, " - [S]  後移動");
-		mvprintw(PBOTTOM-14, PRIGHTMOST-84, " - [D]  右移動");
-		mvprintw(PBOTTOM-12, PRIGHTMOST-84, " - [R]  INVENTRY  の操作");
-		mvprintw(PBOTTOM-11, PRIGHTMOST-84, " - [E]  EQUIPMWNT の操作");
-		mvprintw(PBOTTOM-10 , PRIGHTMOST-84, " - [I]  INFO      の操作");
-		
-	}else if(*info_num == 2){
-
-		erase_info(position);
-
-		mvprintw(PBOTTOM-19, PRIGHTMOST-84, "[1] 操作方法");
-
-		attrset(COLOR_PAIR(2));  // 緑地に白文字
-		mvprintw(PBOTTOM-19, PRIGHTMOST-70, "[2] マス種類");
-
-		attrset(COLOR_PAIR(1));  // 黒地に緑文字
-		mvprintw(PBOTTOM-19, PRIGHTMOST-56, "[3] 武器情報");
-		mvprintw(PBOTTOM-19, PRIGHTMOST-42, "[4] 防具情報");
-
-		attrset(COLOR_PAIR(4));  // 赤地に白文字
-		mvprintw(PBOTTOM-17, PRIGHTMOST-81, "@");
-
-		attrset(COLOR_PAIR(1));  // 黒地に緑文字
-		mvprintw(PBOTTOM-17, PRIGHTMOST-79, ": プレイヤー");
-		mvprintw(PBOTTOM-17, PRIGHTMOST-66, "操作するキャラクター ([1] 操作方法 を参照)");
-
-		attrset(COLOR_PAIR(2));  // 緑地に白文字
-		mvprintw(PBOTTOM-16, PRIGHTMOST-81, " ");
-
-		attrset(COLOR_PAIR(1));  // 黒地に緑文字
-		mvprintw(PBOTTOM-16, PRIGHTMOST-79, ": 壁");
-		mvprintw(PBOTTOM-16, PRIGHTMOST-66, "ダンジョンの部屋を囲む壁 (キャラクターは進めない)");
-
-		attrset(COLOR_PAIR(7));  // 黒地に水色文字
-		mvprintw(PBOTTOM-15, PRIGHTMOST-81, ".");
-
-		attrset(COLOR_PAIR(1));  // 黒地に緑文字
-		mvprintw(PBOTTOM-15, PRIGHTMOST-79, ": 床");
-		mvprintw(PBOTTOM-15, PRIGHTMOST-66, "キャラクター, アイテムが出現する");
-
-		attrset(COLOR_PAIR(7));  // 黒地に水色文字
-		mvprintw(PBOTTOM-14, PRIGHTMOST-81, "#");
-
-		attrset(COLOR_PAIR(1));  // 黒地に緑文字
-		mvprintw(PBOTTOM-14, PRIGHTMOST-79, ": 通路");
-		mvprintw(PBOTTOM-14, PRIGHTMOST-66, "部屋と部屋を繋ぐ床 (アイテムは出現しない)");
-
-		attrset(COLOR_PAIR(9));  // 黒地に黄色文字
-		mvprintw(PBOTTOM-13, PRIGHTMOST-81, "%%");
-
-		attrset(COLOR_PAIR(1));  // 黒地に緑文字
-		mvprintw(PBOTTOM-13, PRIGHTMOST-79, ": 階段");
-		mvprintw(PBOTTOM-13, PRIGHTMOST-66, "次のフロアへと続く階段");
-
-
-		attrset(COLOR_PAIR(8));  // 紫地に白文字
-		mvprintw(PBOTTOM-12, PRIGHTMOST-81, "A");
-
-		attrset(COLOR_PAIR(1));  // 黒地に緑文字
-		mvprintw(PBOTTOM-12, PRIGHTMOST-79, ": 敵");
-		mvprintw(PBOTTOM-12, PRIGHTMOST-66, "(弱 A < B < ... < Y < Z 強)");
-
-	}else if(*info_num == 3){
-
-		erase_info(position);
-
-		mvprintw(PBOTTOM-19, PRIGHTMOST-84, "[1] 操作方法");
-		mvprintw(PBOTTOM-19, PRIGHTMOST-70, "[2] マス種類");
-		
-		attrset(COLOR_PAIR(2));  // 緑地に白文字
-		mvprintw(PBOTTOM-19, PRIGHTMOST-56, "[3] 武器情報");
-
-		attrset(COLOR_PAIR(1));  // 黒地に緑文字
-		mvprintw(PBOTTOM-19, PRIGHTMOST-42, "[4] 防具情報");
-
-	}else if(*info_num == 4){
-
-		erase_info(position);
-
-		mvprintw(PBOTTOM-19, PRIGHTMOST-84, "[1] 操作方法");
-		mvprintw(PBOTTOM-19, PRIGHTMOST-70, "[2] マス種類");
-		mvprintw(PBOTTOM-19, PRIGHTMOST-56, "[3] 武器情報");
-
-		attrset(COLOR_PAIR(2));  // 緑地に白文字
-		mvprintw(PBOTTOM-19, PRIGHTMOST-42, "[4] 防具情報");
-
-		attrset(COLOR_PAIR(1));  // 黒地に緑文字
-	}
-
-	return;
-}
-
 void draw_enemy(Chara *enemy, int h, int w, int y, int x){
 
 	attrset(COLOR_PAIR(8));  // 紫地に白文字
@@ -521,11 +231,11 @@ void draw_dungeon(int *field, Chara *enemy, int h, int w){
     for(int y = 0; y < H; y++){
         for(int x = 0; x < W; x++){
 
-        		attrset(COLOR_PAIR(5));  // 青地に白文字
-        		mvaddstr(0+h  , 0+w  , " ");
-        		mvaddstr(0+h  , W-1+w, " ");
-        		mvaddstr(H-1+h, 0+w  , " ");
-        		mvaddstr(H-1+h, W-1+w, " ");
+        	attrset(COLOR_PAIR(5));  // 青地に白文字
+        	mvaddstr(0+h  , 0+w  , " ");
+        	mvaddstr(0+h  , W-1+w, " ");
+        	mvaddstr(H-1+h, 0+w  , " ");
+        	mvaddstr(H-1+h, W-1+w, " ");
 
             if(field[y*W+x] == 0){
                 attrset(COLOR_PAIR(0));	 // 黒地に黒文字
@@ -557,65 +267,9 @@ void draw_dungeon(int *field, Chara *enemy, int h, int w){
     return ;
 }
 
-/*
-void draw_info(void){
-
-}
 
 
-void output(int *field, int h, int w){
 
-
-	return;
-}
-*/
-
-
-/*
- infoを表示
- info_num : infoの表示番号
-*/
-void info(Mark *position, int *info_num){
-
-	int key;	// 入力キー
-
-	while(1){
-
-		draw_info(position, info_num, 1);
-
-		attrset(COLOR_PAIR(2));  // 緑地に白文字
-		mvprintw(PBOTTOM-2 , PRIGHTMOST-84, "[I] INFOを終了");
-
-		// 入力
-		key = getch();
-
-		// 終了
-		if(key == 'i' || key == 'w' || key == 'a' || key == 's' || key == 'd') break;
-
-		if(key == '1' || key == '2' || key == '3' || key == '4') *info_num = key-48;
-	
-	}
-
-	return;
-
-}
-
-
-/*
- 入力の管理
-*/
-void ctrl(int *field, int key, Chara *player, Chara *enemy, Mark *position, int *info_num){
-
-	switch (key){
-		case 'w': walk((int *)field, player, enemy, 0); break;
-		case 'd': walk((int *)field, player, enemy, 3); break;
-		case 's': walk((int *)field, player, enemy, 6); break;
-		case 'a': walk((int *)field, player, enemy, 9); break;
-		case 'i': info(position, info_num);	 break;
-    }
-
-	return;
-}
 
 
 /*
@@ -635,7 +289,7 @@ void walk(int *field, Chara *player, Chara *enemy, int dire){
 			}
         }else if(UP == 4){
         	make_dungeon();
-        	export("../field/map.txt", (int *)field);
+        	export_field("../field/map.txt", (int *)field);
         	init_game(player, enemy, (int *)field);
         	player->status.floor++;
         }
@@ -650,7 +304,7 @@ void walk(int *field, Chara *player, Chara *enemy, int dire){
 			}
         }else if(RIGHT == 4){
         	make_dungeon();
-        	export("../field/map.txt", (int *)field);
+        	export_field("../field/map.txt", (int *)field);
         	init_game(player, enemy, (int *)field);
         	player->status.floor++;
         }
@@ -665,7 +319,7 @@ void walk(int *field, Chara *player, Chara *enemy, int dire){
 			}
        	}else if(DOWN == 4){
         	make_dungeon();
-        	export("../field/map.txt", (int *)field);
+        	export_field("../field/map.txt", (int *)field);
         	init_game(player, enemy, (int *)field);
         	player->status.floor++;
         }
@@ -680,7 +334,7 @@ void walk(int *field, Chara *player, Chara *enemy, int dire){
 			}
         }else if(LEFT == 4){
         	make_dungeon();
-        	export("../field/map.txt", (int *)field);
+        	export_field("../field/map.txt", (int *)field);
         	init_game(player, enemy, (int *)field);
         	player->status.floor++;
         }
@@ -735,6 +389,34 @@ int Title(Coord *disp){
 	return (getch());
 }
 
+void game_over(Mark *position){
+	mvprintw(1, 1, "Game Over");
+	timeout(-1);
+    getch();        // キー入力
+}
+
+/*
+ 入力の管理
+*/
+void ctrl(int *field, int key, Chara *player, Chara *enemy, Mark *position, int *info_num){
+
+	switch (key){
+		case 'w': walk((int *)field, player, enemy, 0); break;
+		case 'd': walk((int *)field, player, enemy, 3); break;
+		case 's': walk((int *)field, player, enemy, 6); break;
+		case 'a': walk((int *)field, player, enemy, 9); break;
+		case 'i': info(position, info_num);	 break;
+        case 'r': inventry(position);        break;
+        case 'e': equipment(position);		 break;
+        case 'p': player->status.hp = player->status.hp - 10;
+        case KEY_UP:	player_attack((int *)field, player, enemy, 0);
+        case KEY_RIGHT:	player_attack((int *)field, player, enemy, 3);
+        case KEY_DOWN:	player_attack((int *)field, player, enemy, 6);
+        case KEY_LEFT:	player_attack((int *)field, player, enemy, 9);
+    }
+
+	return;
+}
 
 /*
   ゲーム本体
@@ -751,7 +433,16 @@ void Game(Coord *disp, int mode){
 	Mark position;
 
 	Chara  player;				// プレイヤー
-	Chara  enemy[ENEMY_NUM];
+	Chara  enemy[ENEMY_NUM];    // 敵
+
+    
+    /*
+    Category = {type, model_num, sentence};
+    type : アイテムの種類   - 1:武器, 2:防具, 3:回復・強化アイテム
+    model_num : そのアイテムの種類内での型番号
+    sentence : そのアイテムに関する説明
+    */
+//	Category item[MAX_ITEMS] = {};
 
 	// 構造体の中身を全て0に設定
 	memset(&player, 0, sizeof(player));
@@ -770,7 +461,7 @@ void Game(Coord *disp, int mode){
 
 		// コマンドを実行
 		make_dungeon();
-		export("../field/map.txt", (int *)field);
+		export_field("../field/map.txt", (int *)field);
 
 		// 初期設定
 		init_game(&player, enemy, (int *)field);
@@ -779,7 +470,7 @@ void Game(Coord *disp, int mode){
 	} else if(mode == 1){	// ロード
 
 		// セーブデータをロード
-		export("../save/save_data.txt", (int *)field);
+		export_field("../save/save_data.txt", (int *)field);
 
 		// 初期設定
 		init_game(&player, enemy, (int *)field);
@@ -789,12 +480,19 @@ void Game(Coord *disp, int mode){
 
 	// メインループ
 	while (1){
-		
+
+		// ゲームオーバー
+		if(player.status.hp <= 0){
+			erase_status(&position);			// ステータス画面を消去
+			draw_status(&position, &player);	// ステータス画面を更新
+			game_over(&position);				// ゲームオーバー画面
+			
+			break;
+		}
+
 		erase();		// 画面の消去
 
-		draw_flame(&position);
-		mvprintw(TOP, disp->x, "*");
-
+//		draw_flame(&position);
 
 		// ステータスを表示
 		draw_status(&position, &player);
@@ -803,10 +501,10 @@ void Game(Coord *disp, int mode){
 		draw_log(&position);
 		
 		// インベントリーを表示
-		draw_inventry(&position);
+		draw_inventry(&position, 0);
 		
 		// 装備を表示
-		draw_equipment(&position);
+		draw_equipment(&position, 0);
 		
 		// 情報を表示
 		draw_info(&position, &info_num, 0);
