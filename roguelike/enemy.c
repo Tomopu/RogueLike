@@ -2,7 +2,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
+#include <ncurses.h>
 
+#include "header_file/rogue.h"
 #include "header_file/enemy.h"
 
 
@@ -84,8 +86,6 @@ void enemy_walk(int *field, Chara *enemy, int *dire){
 
     }
 
-	
-
 	return;
 }
 
@@ -142,9 +142,21 @@ void writing_around(char file_name[], int *around){
 
 
 /*
+ 敵の攻撃メッセージを表示
+*/
+void enemy_exp_message(Chara *enemy, Queue *message){
+
+    if(queue_len(message) > MAX_MESSAGE) dequeue(message);
+    add_sentence(2, 2, "経験値", enemy->status.exp, message);
+
+    return;
+}
+
+
+/*
  敵の行動
 */
-void enemy_act(int *field, Chara *enemy){
+void enemy_act(int *field, Chara *enemy, Chara *player, Queue *message, Mark *position){
 
 	int dire = 0;
 	int exe_count = 0;		// 実行回数
@@ -154,16 +166,20 @@ void enemy_act(int *field, Chara *enemy){
 
     // 死亡処理
     if(enemy->status.hp <= 0){
-        if(field[enemy->y * W + enemy->x] == 6) field[enemy->y * W + enemy->x] = enemy->memo;
+        if(field[enemy->y * W + enemy->x] == 6){
+            field[enemy->y * W + enemy->x] = enemy->memo;
+            player->status.exp += enemy->status.exp;
+            enemy_exp_message(enemy, message);
+        }
         return;
     }
 
 	if(exe_count %20 == 0)	dire = set_direction(dire);
 
-    if(ENEMY_UP == 5)         printf("up");
-    else if(ENEMY_RIGHT == 5) printf("right");
-    else if(ENEMY_DOWN == 5)  printf("doen");
-    else if(ENEMY_LEFT == 5)  printf("left");
+    if(ENEMY_UP == 5)         enemy_attack(player, enemy, message, position);
+    else if(ENEMY_RIGHT == 5) enemy_attack(player, enemy, message, position);
+    else if(ENEMY_DOWN == 5)  enemy_attack(player, enemy, message, position);
+    else if(ENEMY_LEFT == 5)  enemy_attack(player, enemy, message, position);
     
     else enemy_walk((int *)field, enemy, &dire);
 

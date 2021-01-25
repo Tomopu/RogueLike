@@ -74,9 +74,30 @@ void erase_status(Mark *position){
 
 
 /*
+ INFO画面の初期化
+*/
+void erase_log(Mark *position){
+
+	attrset(COLOR_PAIR(1));  // 黒地に緑文字
+
+	for(int i = 1; i < 10; i++){
+		for(int j = 0; j < 85; j++){
+			mvaddstr(PBOTTOM-10+i, PLEFTMOST+1+j, " ");
+		}
+	}
+
+	return;
+}
+
+
+
+/*
  LOG画面の表示
 */
-void draw_log(Mark *position){
+void draw_log(Mark *position, Queue *message){
+
+	int i = 0;
+	Data *p;
 
 	attrset(COLOR_PAIR(1));  // 黒地に緑文字
 
@@ -86,25 +107,78 @@ void draw_log(Mark *position){
 		mvaddstr(PBOTTOM-10+i, PLEFTMOST+86, "║");
 	}
 	mvprintw(PBOTTOM   , PLEFTMOST, "╚════════════════════════════════════════════════════════════════════════/ LOG /══════╝");
+
+	erase_log(position);
+
+	// ログを表示
+  	p = message->head;
+	while(p != NULL){
+		mvprintw(PBOTTOM-9+i, PLEFTMOST+3, "%s ", p->data);
+		p = p->next;
+		i++;
+	}
+
+	return;
+}
+
+
+/*
+ INVENTRY画面の初期化
+*/
+void erase_inventry(Mark *position){
+
+	attrset(COLOR_PAIR(1));  // 黒地に緑文字
+
+	for(int i = 1; i < 12; i++){
+		for(int j = 0; j < 85; j++){
+			mvaddstr(PTOP+i, PRIGHTMOST-85+j, " ");
+		}
+	}
+
+	return;
 }
 
 
 /*
  INVENTRY画面の表示
 */
-void draw_inventry(Mark *position, int color_flag){
+void draw_inventry(Mark *position, int color_flag, List *list, int choice){
+
+	int number = 0;
+	int i = 2;
 
 	attrset(COLOR_PAIR(1));  // 黒地に緑文字
 
     if(color_flag == 1) attrset(COLOR_PAIR(1) | A_BOLD);    // 黒地に緑文字 強調
 
-
-	mvprintw(PTOP   , PRIGHTMOST-86, "╔══════/ INVENTRY /══════════════════════════════════════════════════════[%2d/%2d]══════╗", 3, 10);
+	mvprintw(PTOP   , PRIGHTMOST-86, "╔══════/ INVENTRY /══════════════════════════════════════════════════════[%2d/%2d]══════╗", list_len(list), 10);
 	for(int i = 1; i < 12; i++){
 		mvaddstr(PTOP+i, PRIGHTMOST-86, "║");
 		mvaddstr(PTOP+i, PRIGHTMOST   , "║");
 	}
 	mvprintw(PTOP+12, PRIGHTMOST-86, "╚══════[R-key]══════════════════════════════════════════════════════/ INVENTRY /══════╝");
+
+	mvprintw(PTOP+10, PRIGHTMOST-44, "%p", list->next);		
+
+	while(list->next != NULL){
+
+		attrset(COLOR_PAIR(3) | A_BOLD);    // 黒地に白文字 強調
+		mvprintw(PTOP+i, PRIGHTMOST-83, "%-2d", number);
+
+		if(choice == number){
+			attrset(COLOR_PAIR(2));    			// 黒地に緑文字
+			mvprintw(PTOP+i, PRIGHTMOST-80, "%s", list->name);
+			attrset(COLOR_PAIR(1));    			// 黒地に緑文字
+		}else{
+			attrset(COLOR_PAIR(1));    			// 黒地に緑文字
+			mvprintw(PTOP+i, PRIGHTMOST-80, "%s", list->name);		
+		}
+
+		i++;
+		number++;
+		list = list->next;
+	}
+
 	return;
 }
 
@@ -112,13 +186,15 @@ void draw_inventry(Mark *position, int color_flag){
 /*
  inventryを表示
 */
-void inventry(Mark *position){
+void inventry(Mark *position, List *list){
     
-    int key;    // 入力キー
+    int key;    		// 入力キー
+    int choice = -1;	// 選択したアイテム
         
     while(1){
         
-        draw_inventry(position, 1);
+        draw_inventry(position, 1, list, choice-48);
+        
 
         attrset(COLOR_PAIR(2));  // 緑地に白文字
         mvprintw(PTOP+10 , PRIGHTMOST-84, "[R] INVENTRYを終了");
@@ -126,13 +202,36 @@ void inventry(Mark *position){
         // 入力
         key = getch();
 
+        if(47 < key && key < list_len(list)+48){
+        	if(key == choice)	choice = -1;
+        	else choice = key;
+        }
+
+        // アイテムを使う・捨てる
+        if(choice != -1){
+        	if(key == 't'){
+        		remove_list(&list, choice-48);
+        		choice = -1;
+        	//	draw_inventry(position, 1, list, choice-48);
+        	}
+        }
+
+        erase_inventry(position);
+
+        if(choice != -1){
+        	attrset(COLOR_PAIR(2));  // 緑地に白文字
+        	mvprintw(PTOP+10 , PRIGHTMOST-65, "[U] つかう");
+        	mvprintw(PTOP+10 , PRIGHTMOST-54, "[T] 捨てる");
+        }
+
         // 終了
-        if(key == 'r' || key == 'w' || key == 'a' || key == 's' || key == 'd') break;
+        if(key == 'r' || key == 'q' || key == 'w' || key == 'a' || key == 's' || key == 'd') break;
 
     }
 
     return;
 }
+
 
 /*
  EQUIPMENT画面の表示
@@ -181,7 +280,7 @@ void equipment(Mark *position){
         key = getch();
 
         // 終了
-        if(key == 'e' || key == 'w' || key == 'a' || key == 's' || key == 'd') break;
+        if(key == 'e' || key == 'q' || key == 'w' || key == 'a' || key == 's' || key == 'd') break;
 
     }
 
@@ -210,7 +309,6 @@ void draw_info(Mark *position, int *info_num, int color_flag){
 	if(*info_num == 1){
 
 		erase_info(position);
-		mvprintw(PBOTTOM-16, PRIGHTMOST-84, " - [W]  前移動 Move forward");
 
 		attrset(COLOR_PAIR(2));  // 緑地に白文字
 		mvprintw(PBOTTOM-19, PRIGHTMOST-84, "[1] 操作方法");
@@ -220,14 +318,35 @@ void draw_info(Mark *position, int *info_num, int color_flag){
 		mvprintw(PBOTTOM-19, PRIGHTMOST-56, "[3] 武器情報");
 		mvprintw(PBOTTOM-19, PRIGHTMOST-42, "[4] 防具情報");
 
-		mvprintw(PBOTTOM-18, PRIGHTMOST-84, "");
-		mvprintw(PBOTTOM-17, PRIGHTMOST-84, " - [W]  前移動");
-		mvprintw(PBOTTOM-16, PRIGHTMOST-84, " - [A]  左移動");
-		mvprintw(PBOTTOM-15, PRIGHTMOST-84, " - [S]  後移動");
-		mvprintw(PBOTTOM-14, PRIGHTMOST-84, " - [D]  右移動");
-		mvprintw(PBOTTOM-12, PRIGHTMOST-84, " - [R]  INVENTRY  の操作");
-		mvprintw(PBOTTOM-11, PRIGHTMOST-84, " - [E]  EQUIPMWNT の操作");
-		mvprintw(PBOTTOM-10 , PRIGHTMOST-84, " - [I]  INFO      の操作");
+		mvprintw(PBOTTOM-18, PRIGHTMOST-83, "");
+		mvprintw(PBOTTOM-17, PRIGHTMOST-83, " - [W]  前移動");
+		mvprintw(PBOTTOM-16, PRIGHTMOST-83, " - [A]  左移動");
+		mvprintw(PBOTTOM-15, PRIGHTMOST-83, " - [S]  後移動");
+		mvprintw(PBOTTOM-14, PRIGHTMOST-83, " - [D]  右移動");
+
+		mvprintw(PBOTTOM-12, PRIGHTMOST-83, " - [↑]  上攻撃");
+		mvprintw(PBOTTOM-11, PRIGHTMOST-83, " - [→]  右攻撃");
+		mvprintw(PBOTTOM-10, PRIGHTMOST-83, " - [↓]  下攻撃");
+		mvprintw(PBOTTOM- 9, PRIGHTMOST-83, " - [←]  左攻撃");
+
+		mvprintw(PBOTTOM- 7, PRIGHTMOST-83, " - [Space]  アイテムの回収");
+		mvprintw(PBOTTOM- 5, PRIGHTMOST-83, " アイテムや装備を回収するときは、");
+		mvprintw(PBOTTOM- 4, PRIGHTMOST-83, " アイテムの上に乗ってから[Space]を押してください。");
+
+		mvprintw(PBOTTOM-17, PRIGHTMOST-50, " - [R]  INVENTRY  の操作");
+		mvprintw(PBOTTOM-16, PRIGHTMOST-50, " - [E]  EQUIPMWNT の操作");
+		mvprintw(PBOTTOM-15, PRIGHTMOST-47, " - [0]  アイテムの番号を入力");
+		mvprintw(PBOTTOM-14, PRIGHTMOST-47, " - [U]  アイテムを使用する");
+		mvprintw(PBOTTOM-13, PRIGHTMOST-47, " - [T]  アイテムを捨てる");
+
+		mvprintw(PBOTTOM-11, PRIGHTMOST-50, " - [I]  INFO画面   の操作");
+		mvprintw(PBOTTOM-10, PRIGHTMOST-47, " - [1]  操作方法の説明");
+		mvprintw(PBOTTOM- 9, PRIGHTMOST-47, " - [2]  マスの種類の説明");
+		mvprintw(PBOTTOM- 8, PRIGHTMOST-47, " - [3]  武器の説明");
+		mvprintw(PBOTTOM- 7, PRIGHTMOST-47, " - [4]  防具の説明");
+
+		
+
 		
 	}else if(*info_num == 2){
 
@@ -285,6 +404,15 @@ void draw_info(Mark *position, int *info_num, int color_flag){
 		mvprintw(PBOTTOM-12, PRIGHTMOST-79, ": 敵");
 		mvprintw(PBOTTOM-12, PRIGHTMOST-66, "(弱 A < B < ... < Y < Z 強)");
 
+		attrset(COLOR_PAIR(9));  // 黒地に黄色文字
+        mvprintw(PBOTTOM-11, PRIGHTMOST-81, "*");
+
+        attrset(COLOR_PAIR(1));  // 黒地に緑文字
+        mvprintw(PBOTTOM-11, PRIGHTMOST-79, ": アイテム");
+		mvprintw(PBOTTOM-11, PRIGHTMOST-66, "次のフロアへと続く階段");
+
+
+
 	}else if(*info_num == 3){
 
 		erase_info(position);
@@ -314,6 +442,7 @@ void draw_info(Mark *position, int *info_num, int color_flag){
 
 	return;
 }
+
 
 /*
  INFO画面の初期化
@@ -351,7 +480,7 @@ void info(Mark *position, int *info_num){
 		key = getch();
 
 		// 終了
-		if(key == 'i' || key == 'w' || key == 'a' || key == 's' || key == 'd') break;
+		if(key == 'i' || key == 'q' || key == 'w' || key == 'a' || key == 's' || key == 'd') break;
 
 		if(key == '1' || key == '2' || key == '3' || key == '4') *info_num = key-48;
 	

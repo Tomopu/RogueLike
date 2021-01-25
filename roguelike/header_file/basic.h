@@ -9,9 +9,17 @@
 //#define H 		30
 //#define W 		30
 
-#define	BUFLEN	256
+#define	BUFLEN		256
 
-#define MAX_ITEMS   2       // アイテムの数
+#define MAX_ITEMS     3       // アイテムの数
+
+#define MAX_INVENTORY 1
+
+#define MAX_MESSAGE   8
+
+#define SUCCESS 1
+
+#define FAILURE 0
 
 
 // main.c, make_dungeon.c
@@ -69,7 +77,17 @@ typedef struct {
 	char sentence[BUFLEN];
 } Category;
 
+// キューのデータ
+typedef struct DATA{
+  char data[BUFLEN];
+  struct DATA *next;
+} Data;
 
+// キューの情報を構造体
+typedef struct {
+  Data *head;	// キューの先頭ポインタ 
+  Data *tail;	// キューの最後尾ポインタ
+} Queue;
 
 /*
  Category = {type, model_num, sentence};

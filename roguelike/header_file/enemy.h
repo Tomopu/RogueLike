@@ -1,9 +1,9 @@
 #ifndef ENEMY_H
 #define ENEMY_H
 
-#include "basic.h"
+#include "rogue.h"
 
-#define ENEMY_NUM 3
+#define ENEMY_NUM 5
 #define SEARCH_RANGE 13		// サーチ範囲の範囲(幅)
 
 #define ENEMY_UP	field[(enemy->y-1)* W + enemy->x]
@@ -18,9 +18,10 @@ extern void enemy_walkDown(int *field, Chara *enemy);
 extern void enemy_walkLeft(int *field, Chara *enemy);
 
 
-extern void enemy_walk(int *field, Chara *enemy, int *ddire);
+extern void enemy_walk(int *field, Chara *enemy, int *dire);
 
 extern int  set_direction(int dire);
-extern void enemy_act(int *field, Chara *enemy);
+extern void enemy_exp_message(Chara *enemy, Queue *message);
+extern void enemy_act(int *field, Chara *enemy, Chara *player, Queue *message, Mark *position);
 
 #endif

@@ -1,0 +1,6 @@
+# type, model_num, probability, effect_value, name
+# type = 種類  model_num = 型番  probability = 出現確率  effect_value = 効果値  name = アイテム名
+# type : 1 = 回復, 2 = 巻物
+
+1,1,10,3,薬草
+  
