@@ -68,6 +68,7 @@ extern void draw_info(Mark *position, int *info_num, int color_flag);
 extern void erase_info(Mark *position);
 extern void info(Mark *position, int *info_num);
 
+// battle
 extern int  collation_coord(int *enemy_coord, int coord);
 extern void player_attack_message(Chara *player, Queue *message);
 extern void player_attack(int *field, Chara *player, Chara *enemy, Queue *message, Mark *position, int dire);
@@ -75,13 +76,13 @@ extern void player_attack(int *field, Chara *player, Chara *enemy, Queue *messag
 extern void enemy_attack_message(Chara *enemy, Queue *message);
 extern void enemy_attack(Chara *player, Chara *enemy, Queue *message, Mark *position);
 
+// log
 extern void init_queue(Queue *queue);
 extern void finish_queue(Queue *queue);
 extern void print_queue(Queue *queue);
 extern int  queue_len(Queue *queue);
 extern void enqueue(Queue *queue, char input[]);
-extern void deqeueue(Queue *queue);
-
+extern void dequeue(Queue *queue);
 
 extern char *sgettok(char *str, char *tok, int n);
 extern void add_sentence(int type, int model, char name[], int num, Queue *queue);

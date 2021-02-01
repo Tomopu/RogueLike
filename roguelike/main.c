@@ -59,7 +59,7 @@ int main(void){
 
         switch (key){
         	case 'n': Game(&disp, 0);	break;
-        	case 'r': Game(&disp, 1);	break;
+        //	case 'r': Game(&disp, 1);	break;
         	case 'i': Instr();			break;
         }
     }
@@ -187,7 +187,7 @@ void init_game(Chara *player, Chara *enemy, int *field){
 
 				enemy[i].rank = 'A';
 				enemy[i].status.hp = 10;
-				enemy[i].status.attack = 1;
+				enemy[i].status.attack = 2;
 				enemy[i].status.exp = 5;
 
 				break;
@@ -225,7 +225,7 @@ void init_game(Chara *player, Chara *enemy, int *field){
 */
 void init_player_status(Chara *player){		
 
-	PLAYER_MAX_HP 	  = 100;				// 初期体力上限
+	PLAYER_MAX_HP 	  = 10;				// 初期体力上限
 	PLAYER_HP 		  = PLAYER_MAX_HP;		// 初期体力
 	PLAYER_ATTACK 	  = 5;					// 初期攻撃力
 	PLAYER_DEFENCE 	  = 5;					// 初期防御力
@@ -301,11 +301,6 @@ void draw_dungeon(int *field, Chara *enemy, int h, int w){
 
     return ;
 }
-
-
-
-
-
 
 /*
  歩けるか確認
@@ -470,6 +465,29 @@ void ctrl(int *field, int key, Chara *player, Chara *enemy, Mark *position, Queu
 	return;
 }
 
+void level_up(Chara *player){
+
+	int over = 0;
+
+	if(PLAYER_BORDER_EXP <= PLAYER_EXP){
+
+		over = PLAYER_EXP - PLAYER_BORDER_EXP;
+		PLAYER_LEVEL++;
+
+		PLAYER_EXP = 0 + over;
+		PLAYER_BORDER_EXP += rand()%9;
+
+		PLAYER_MAX_HP += 10 + rand()%5;
+		PLAYER_HP = PLAYER_MAX_HP;
+
+		PLAYER_ATTACK += rand()%3 +1;
+
+	}
+
+
+	return;
+}
+
 /*
   ゲーム本体
   mode = 0 : Newgame
@@ -496,15 +514,7 @@ void Game(Coord *disp, int mode){
   	init_queue(&message);
 
   	//初期化
-  	storage = new_node();	
-
-    /*
-    Category = {type, model_num, sentence};
-    type : アイテムの種類   - 1:武器, 2:防具, 3:回復・強化アイテム
-    model_num : そのアイテムの種類内での型番号
-    sentence : そのアイテムに関する説明
-    */
-//	Category item[MAX_ITEMS] = {};
+ 	storage = new_node();	
 
 	// 構造体の中身を全て0に設定
 	memset(&player, 0, sizeof(player));
@@ -517,7 +527,6 @@ void Game(Coord *disp, int mode){
 
 	player.status.floor = 1;
 	
-
     // フィールドをロード
 	if(mode == 0){			// ニューゲーム
 
@@ -541,20 +550,20 @@ void Game(Coord *disp, int mode){
 
 	} 
 
-
 	// メインループ
 	while (1){
 
 		erase();		// 画面の消去
 
-//		draw_flame(&position);
+		// レベルアップ
+		level_up(&player);
 
 		// ステータスを表示
 		draw_status(&position, &player);
 		
 		// ログを表示
 		draw_log(&position, &message);
-		
+
 		// インベントリーを表示
 		draw_inventry(&position, 0, storage, -1);
 		
@@ -626,33 +635,25 @@ void Instr(void){
 
 		attrset(COLOR_PAIR(1));  // 黒地に緑文字
 		mvprintw(chrpos.y+10, chrpos.x+1 , "ゲームを開始すると、ランダムに生成されたダンジョンにスポーンします.　どこかに設置された階段を探して地下50回を目指してください.");
-		mvprintw(chrpos.y+11, chrpos.x+1 , "ダンジョン内に現れる敵キャラに倒されると、それまで集めた所持品は全て失い、所持金は６割となってリスポーンします.");
+	//	mvprintw(chrpos.y+11, chrpos.x+1 , "ダンジョン内に現れる敵キャラに倒されると、それまで集めた所持品は全て失い、所持金は６割となってリスポーンします.");
 		mvprintw(chrpos.y+12, chrpos.x+1 , "詳しい操作方法は、ゲーム開始後に[I]キーを押してINFO Windowをご覧ください.");
 
-
-
-
 		attrset(COLOR_PAIR(1) | A_BOLD);  // 黒地に緑文字
-//		mvprintw(chrpos.y+3 , chrpos.x+1 , "ローグ(Rogue)とは.");
+		mvprintw(chrpos.y+14 , chrpos.x+1 , "ローグ(Rogue)とは.");
 
 		attrset(COLOR_PAIR(1));  // 黒地に緑文字
-//		mvprintw(chrpos.y+4 , chrpos.x+1 , "『ローグ』 (Rogue) は、ダンジョン探索型のコンピュータRPGである。");
-//		mvprintw(chrpos.y+5 , chrpos.x+1 , "その初版が公表されたのは1980年とコンピュータRPGの黎明期であり、最初期のコンピュータRPGの内の1つである。");
+		mvprintw(chrpos.y+15 , chrpos.x+1 , "『ローグ』 (Rogue) は、ダンジョン探索型のコンピュータRPGである。");
+		mvprintw(chrpos.y+16 , chrpos.x+1 , "その初版が公表されたのは1980年とコンピュータRPGの黎明期であり、最初期のコンピュータRPGの内の1つである。 -Wikipedia");
 
-
-
-		/*
-		mvaddstr( chrpos.y    , chrpos.x   , " 【 移動 】");	
-		mvaddstr( chrpos.y +2 , chrpos.x +1, "  [W] - 前");
-		mvaddstr( chrpos.y +3 , chrpos.x +1, "  [A] - 左        [W]");
-		mvaddstr( chrpos.y +4 , chrpos.x +1, "  [S] - 下     [A][S][D]");
-		mvaddstr( chrpos.y +5 , chrpos.x +1, "  [D] - 右");
-		*/
-
+		mvaddstr(chrpos.y+19 , chrpos.x   , " 【 移動 】");	
+		mvaddstr(chrpos.y+20 , chrpos.x +1, "  [W] - 前");
+		mvaddstr(chrpos.y+21 , chrpos.x +1, "  [A] - 左        [W]");
+		mvaddstr(chrpos.y+22 , chrpos.x +1, "  [S] - 下     [A][S][D]");
+		mvaddstr(chrpos.y+23 , chrpos.x +1, "  [D] - 右");
 
 		attrset(COLOR_PAIR(2));				// 色を指定 (緑地に白文字)
 
-		mvaddstr( chrpos.y +20, chrpos.x, "  [Q] - 終了  ");	
+		mvaddstr( chrpos.y +30, chrpos.x, "  [Q] - 終了  ");	
 
 		refresh();                  // 画面の再表示
 

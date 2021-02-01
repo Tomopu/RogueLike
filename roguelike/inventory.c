@@ -4,8 +4,10 @@
 #include <ncurses.h>
 
 #include "header_file/rogue.h"
-#include "header_file/inventory.h"
 
+/*
+ ノードを追加
+*/
 List *new_node(void){
 
 	List *node;
@@ -24,6 +26,9 @@ List *new_node(void){
 	return node;
 } 
 
+/*
+ リストを追加
+*/
 void append_list(List *list, int effect_value, char name[]){
 
 	while(list->next != NULL) list = list->next;
@@ -37,20 +42,11 @@ void append_list(List *list, int effect_value, char name[]){
 	return;
 }
 
-void print_list(List *list){
 
-	printf("( ");
-
-	while(list->next != NULL){
-		printf("(%d %d) ", list->type, list->model_num);
-		list = list->next;
-	}
-	
-	printf(")\n");
-
-	return ;
-}
-
+/*
+ リストの長さ
+ return : リストの長さ
+*/
 int list_len(List *list){
 
 	int len = 0;
@@ -63,32 +59,10 @@ int list_len(List *list){
 	return len;
 }
 
-int use_list(List **ndPtrPtr, Property *item, int index){
-
-	List  *next_node;
-
-	while(index > 0 && *ndPtrPtr != NULL){
-		ndPtrPtr = &((*ndPtrPtr)->next);
-		index--;
-	}
-
-	if (*ndPtrPtr != NULL) {
-        next_node  = (*ndPtrPtr)->next;
-
-        item->type = (*ndPtrPtr)->type;
-        item->model_num = (*ndPtrPtr)->model_num;
-
-        free(*ndPtrPtr);
-        *ndPtrPtr = next_node;
-
-        return SUCCESS;
-    } else {
-
-        return FAILURE;
-    }
-
-}
-
+/*
+ リストを削除
+ return : 成功1, 失敗-1
+*/
 int remove_list(List **ndPtrPtr, int index){
 
 	List  *next_node;
@@ -113,49 +87,8 @@ int remove_list(List **ndPtrPtr, int index){
 }
 
 /*
-int abcd(void){
-
-	int storage_max = 5;
-	int type;
-	int model_num;
-	int x;
-
-	List  *storage;
-	Property item = {0, 0};
-
-	//初期化
-	storage = new_node();
-
-	for(int i = 0; i < 7; i++){
-			append_list(storage, i, i);
-		}
-
-	while(1){
-		print_list(storage);
-		printf("%d\n", list_len(storage));
-
-		printf("入力 >");
-		scanf("%d %d", &type, &model_num);
-		append(storage, type, model_num);
-
-
-		print_list(storage);
-		printf("%d\n", list_len(storage));
-
-		printf("削除しますか? >");
-		scanf("%d", &x);
-		if(x >= 0){
-			remove_list(&storage, &item, x);
-		}
-
-		printf("type : %d, model_num : %d", item.type, item.model_num);
-	}
-
-	return 0;
-}
+ アイテムを取る
 */
-
-
 void get_item(Chara *player, List *storage, Item *item){
 
 	if(player->memo == 7){
@@ -222,6 +155,5 @@ void add_item(int type, int model, List *storage){
 
 	//後処理
 	if(fp != NULL) fclose(fp);
-	
 	return ;
 }

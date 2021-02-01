@@ -20,6 +20,8 @@ extern void enemy_walkLeft(int *field, Chara *enemy);
 
 extern void enemy_walk(int *field, Chara *enemy, int *dire);
 
+extern int  search_player(int *around);
+
 extern int  set_direction(int dire);
 extern void enemy_exp_message(Chara *enemy, Queue *message);
 extern void enemy_act(int *field, Chara *enemy, Chara *player, Queue *message, Mark *position);

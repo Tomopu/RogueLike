@@ -51,7 +51,7 @@ void draw_status(Mark *position, Chara *player){
 
 	attrset(COLOR_PAIR(1));  // 黒地に緑文字
 	mvprintw(PTOP+2, PLEFTMOST+8+10*2, "(%4d/%4d)", PLAYER_HP, PLAYER_MAX_HP);
-
+	
 	return;
 }
 
@@ -158,8 +158,6 @@ void draw_inventry(Mark *position, int color_flag, List *list, int choice){
 	}
 	mvprintw(PTOP+12, PRIGHTMOST-86, "╚══════[R-key]══════════════════════════════════════════════════════/ INVENTRY /══════╝");
 
-	mvprintw(PTOP+10, PRIGHTMOST-44, "%p", list->next);		
-
 	while(list->next != NULL){
 
 		attrset(COLOR_PAIR(3) | A_BOLD);    // 黒地に白文字 強調
@@ -212,7 +210,8 @@ void inventry(Mark *position, List *list){
         	if(key == 't'){
         		remove_list(&list, choice-48);
         		choice = -1;
-        	//	draw_inventry(position, 1, list, choice-48);
+        	}else if(key == 'u'){
+        		choice = -1;
         	}
         }
 
@@ -409,7 +408,7 @@ void draw_info(Mark *position, int *info_num, int color_flag){
 
         attrset(COLOR_PAIR(1));  // 黒地に緑文字
         mvprintw(PBOTTOM-11, PRIGHTMOST-79, ": アイテム");
-		mvprintw(PBOTTOM-11, PRIGHTMOST-66, "次のフロアへと続く階段");
+		mvprintw(PBOTTOM-11, PRIGHTMOST-66, "回復などのアイテム");
 
 
 

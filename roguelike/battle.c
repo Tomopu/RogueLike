@@ -8,31 +8,6 @@
 #include "header_file/rogue.h"
 
 /*
- デキューする関数
-*/
-void dequeue(Queue *queue){
-  
-  Data *tmpNext;
-
-  // キューが空なら何もせずに関数終了
-  if(queue->head == NULL){
-    printf("キューが空です\n");
-    return ;
-  }
-
-  // デキューするデータのnextポインタの指すアドレスを退避
-  tmpNext = queue->head->next;
-
-  // デキューしたデータ（先頭データ）を削除
-  free(queue->head);
-
-  // 先頭を指すheadポインタを先頭の次のデータのアドレス（退避したアドレス）にセット
-  queue->head = tmpNext;
-
-  return ;
-}
-
-/*
  攻撃先の敵の特定
 */
 int collation_coord(int *enemy_coord, int coord){
@@ -136,18 +111,5 @@ void enemy_attack(Chara *player, Chara *enemy, Queue *message, Mark *position){
 
 	return;
 }
-
-
-
-
-/*
- バトル
-*/
-void battle(int *field, Chara *player, Chara *enemy, Queue *message){
-
-
-	return;
-}
-
 
 

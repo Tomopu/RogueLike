@@ -38,9 +38,9 @@ void enqueue(Queue *queue, char input[]){
   // エンキューするデータを保持するメモリを確保
   add = (Data*)malloc(sizeof(Data));
 
-  // メモリが足りなければ何もせず関数終了
+  // メモリが足りなければ何もせず終了
   if(add == NULL){
-    printf("メモリが取得できないためエンキューできません\n");
+    printf("メモリが取得できません\n");
     return ;
   }
 
@@ -61,6 +61,32 @@ void enqueue(Queue *queue, char input[]){
   // キューの最後尾を指すtailを追加したデータのアドレスにセット
   queue->tail = add;
 }
+
+/*
+ デキューする関数
+*/
+void dequeue(Queue *queue){
+  
+  Data *tmpNext;
+
+  // キューが空なら何もせずに関数終了
+  if(queue->head == NULL){
+    printf("キューが空です\n");
+    return ;
+  }
+
+  // デキューするデータのnextポインタの指すアドレスを退避
+  tmpNext = queue->head->next;
+
+  // デキューしたデータ（先頭データ）を削除
+  free(queue->head);
+
+  // 先頭を指すheadポインタを先頭の次のデータのアドレス（退避したアドレス）にセット
+  queue->head = tmpNext;
+
+  return ;
+}
+
 
 
 /*

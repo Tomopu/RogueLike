@@ -5,9 +5,11 @@
 #include <ncurses.h>
 
 #include "header_file/rogue.h"
-#include "header_file/enemy.h"
 
 
+/*
+ 上に歩く
+*/
 void enemy_walkUp(int *field, Chara *enemy){
     
     field[enemy->y*W + enemy->x] = enemy->memo;
@@ -18,6 +20,10 @@ void enemy_walkUp(int *field, Chara *enemy){
     return;
 }
 
+
+/*
+ 右に歩く
+*/
 void enemy_walkRight(int *field, Chara *enemy){
 
     field[enemy->y*W + enemy->x] = enemy->memo;
@@ -28,6 +34,10 @@ void enemy_walkRight(int *field, Chara *enemy){
     return;
 }
 
+
+/*
+ 下に歩く
+*/
 void enemy_walkDown(int *field, Chara *enemy){
 
     field[enemy->y*W + enemy->x] = enemy->memo;
@@ -38,6 +48,10 @@ void enemy_walkDown(int *field, Chara *enemy){
     return;
 }
 
+
+/*
+ 左に歩く
+*/
 void enemy_walkLeft(int *field, Chara *enemy){
 
     field[enemy->y*W + enemy->x] = enemy->memo;
@@ -48,6 +62,10 @@ void enemy_walkLeft(int *field, Chara *enemy){
     return;
 }
 
+
+/*
+ 敵の歩く処理
+ */
 void enemy_walk(int *field, Chara *enemy, int *dire){
 
     while(1){
@@ -89,6 +107,10 @@ void enemy_walk(int *field, Chara *enemy, int *dire){
 	return;
 }
 
+
+/*
+ 進む方角をランダムに決定
+*/
 int set_direction(int dire){
 
 	dire = rand()%4;
@@ -101,6 +123,10 @@ int set_direction(int dire){
 	return dire;
 }
 
+
+/*
+ 周囲を見渡す
+*/
 void search(int *field, Chara *enemy, int *around){
 
     for(int i = enemy->y - SEARCH_RANGE/2; i <= enemy->y + SEARCH_RANGE/2; i++){
@@ -113,6 +139,64 @@ void search(int *field, Chara *enemy, int *around){
 
     return;
 }
+
+
+/*
+ 周囲にプレイヤーがいるか
+ return : プレイヤーがいれば1, いなければ0を返す
+*/
+int search_player(int *around){
+
+    int flag = 0;
+
+    for(int i = 0; i < SEARCH_RANGE; i++){
+        for(int j = 0; j < SEARCH_RANGE; j++){
+            if(around[i * SEARCH_RANGE + j] == 5){
+                flag = 1;
+                break;
+            }
+        }
+    }
+
+    return flag;
+}
+
+
+/*
+ 敵との距離
+*/
+int distance_to_player(int *around, int dire){
+
+    Coord player;
+    Coord enemy = {SEARCH_RANGE/2, SEARCH_RANGE/2};
+
+    int y_dist = 0;     // y軸のplayerとenemyの距離
+    int x_dist = 0;     // x軸のplayerとenemyの距離
+
+    for(int i = 0; i < SEARCH_RANGE; i++){
+        for(int j = 0; j < SEARCH_RANGE; j++){
+            if(around[i * SEARCH_RANGE + j] == 5){
+                player.x = j;
+                player.y = i;
+                break;
+            }
+        }
+    }
+
+    y_dist = player.y - enemy.y;
+    x_dist = player.x - enemy.x;
+
+    if(square(y_dist) > square(x_dist)){
+        if     (y_dist > 0)   dire = 6;
+        else if(y_dist < 0)   dire = 0;
+    }else if(square(y_dist) < square(x_dist)){
+        if     (x_dist > 0)   dire = 3;
+        else if(x_dist < 0)   dire = 9;
+    }
+
+    return dire;
+}
+
 
 /*
  fieldをテキストファイルに格納 
@@ -174,18 +258,25 @@ void enemy_act(int *field, Chara *enemy, Chara *player, Queue *message, Mark *po
         return;
     }
 
-	if(exe_count %20 == 0)	dire = set_direction(dire);
+    writing_around("../field/around_value.txt", (int *)around);
+
+    // 周囲を見渡す
+    search((int *)field, enemy, (int *)around);
 
     if(ENEMY_UP == 5)         enemy_attack(player, enemy, message, position);
     else if(ENEMY_RIGHT == 5) enemy_attack(player, enemy, message, position);
     else if(ENEMY_DOWN == 5)  enemy_attack(player, enemy, message, position);
     else if(ENEMY_LEFT == 5)  enemy_attack(player, enemy, message, position);
     
-    else enemy_walk((int *)field, enemy, &dire);
+    else{
+        if(search_player((int *)around) == 1){
+            dire = distance_to_player((int *)around, dire);
+        }else if(exe_count %20 == 0){
+            dire = set_direction(dire);
+        }
 
-    search((int *)field, enemy, (int *)around);
-
-    writing_around("../field/around_value.txt", (int *)around);
+        enemy_walk((int *)field, enemy, &dire);
+    }
 
 	return;
 }
